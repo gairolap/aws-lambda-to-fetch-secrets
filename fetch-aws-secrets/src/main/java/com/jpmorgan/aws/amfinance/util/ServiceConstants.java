@@ -3,15 +3,26 @@
  */
 package com.jpmorgan.aws.amfinance.util;
 
-public class ServiceConstants {
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
-	public static final String REGION_KEY = "region";
-	public static final String SCRT_MGR_ENDPOINT_KEY = "secretMgrEndpoint";
-	public static final String SECRET_ID_KEY = "secretId";
-	public static final String RES_NT_FOUND = "Requested secret isn't found!";
-	public static final String INVLD_REQUEST = "Invalid request received!";
-	public static final String INVLD_REQUEST_PARAMS = "Request had invalid params!";
-	public static final String UNBL_TO_ACCESS_KEY_DTLS = "Unable to access the secret!";
-	public static final String TECH_ERR = "Technical error occurred while retrieving the secret!";
+@Getter
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public enum ServiceConstants {
+
+	REGION("region"), SECRET_MGR_HOST("secretMgrHost"), SECRET_ID("secretId"),
+	RES_NT_FOUND("Requested secret isn't found!"), INVLD_REQUEST("Invalid request received!"),
+	INVLD_REQUEST_PARAMS("Request had invalid params!"), UNBL_TO_ACCESS_KEY_DTLS("Unable to access the secret!"),
+	TECH_ERR("Technical error occurred while retrieving the secret!"),
+	EMPTY_SECRET_DETAILS("Error occurred while retrieving the secret from secrets manager!"),
+	EMPTY_OR_NULL_MANDATORY_PARAMS("Either of the mandatory request parameters is NULL or EMPTY");
+
+	String constVal;
+
+	private ServiceConstants(String value) {
+
+		this.constVal = value;
+	}
 
 }

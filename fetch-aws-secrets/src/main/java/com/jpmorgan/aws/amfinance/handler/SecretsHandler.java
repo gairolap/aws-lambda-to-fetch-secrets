@@ -16,14 +16,15 @@ import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
 import com.amazonaws.services.secretsmanager.model.InvalidParameterException;
 import com.amazonaws.services.secretsmanager.model.InvalidRequestException;
 import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
+import com.amazonaws.util.StringUtils;
 import com.jpmorgan.aws.amfinance.util.ServiceConstants;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class SecretsHandler implements RequestHandler<Map<String, String>, Object> {
 
 	/**
@@ -35,22 +36,30 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 	}
 
 	/**
-	 * Fetch secret key and value for the given secretId.
+	 * Fetch secret key and value for the given secret-id.
 	 * 
 	 * @param {@linkplain Map<String, String>}.
 	 * @return {@linkplain Object}.
 	 */
 	private Object fetchSecretsFromSecertsMngr(Map<String, String> request) {
 
+		String secretId = request.get(ServiceConstants.SECRET_ID.getConstVal());
+		String region = request.get(ServiceConstants.REGION.getConstVal());
+		String endpointHost = request.get(ServiceConstants.SECRET_MGR_HOST.getConstVal());
+
+		if (StringUtils.isNullOrEmpty(secretId) || StringUtils.isNullOrEmpty(region)
+				|| StringUtils.isNullOrEmpty(endpointHost)) {
+			return ServiceConstants.EMPTY_OR_NULL_MANDATORY_PARAMS.getConstVal();
+		}
+
 		try {
-			log.info("Retrieving the secret value for secretId {} from region {}", request.get("secretId"),
-					request.get("region"));
+			log.info("Retrieving the secret details for secret-id {} from region {}", secretId, region);
 
 			GetSecretValueResult getSecretValueResult = null;
 
 			// Create end-point configuration
 			AwsClientBuilder.EndpointConfiguration endpointConfig = new AwsClientBuilder.EndpointConfiguration(
-					request.get(ServiceConstants.SCRT_MGR_ENDPOINT_KEY), request.get(ServiceConstants.REGION_KEY));
+					endpointHost, region);
 			// Create client-builder
 			AWSSecretsManagerClientBuilder clientBuilder = AWSSecretsManagerClientBuilder.standard();
 			// Set end-point configuration to client-builder
@@ -58,33 +67,33 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 			// Create secrets manager client
 			AWSSecretsManager secretsMgrClient = clientBuilder.build();
 
-			GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest()
-					.withSecretId(request.get(ServiceConstants.SECRET_ID_KEY));
+			GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest().withSecretId(secretId);
 			// Fetch the secret value
 			getSecretValueResult = secretsMgrClient.getSecretValue(getSecretValueRequest);
 
 			if (getSecretValueResult == null) {
-				return "Error occurred while retrieving the secret from secrets manager!";
+				return ServiceConstants.EMPTY_SECRET_DETAILS.getConstVal();
 			}
 
-			return (getSecretValueResult.getSecretString() != null) ? getSecretValueResult.getSecretString()
-					: getSecretValueResult.getSecretBinary();
+			return (!StringUtils.isNullOrEmpty(getSecretValueResult.getSecretString()))
+					? getSecretValueResult.getSecretString()
+							: getSecretValueResult.getSecretBinary();
 		} catch (Exception excp) {
 			if (excp instanceof ResourceNotFoundException) {
-				log.info(ServiceConstants.RES_NT_FOUND, excp);
-				return ServiceConstants.RES_NT_FOUND;
+				log.info(ServiceConstants.RES_NT_FOUND.getConstVal(), excp);
+				return ServiceConstants.RES_NT_FOUND.getConstVal();
 			} else if (excp instanceof InvalidRequestException) {
-				log.info(ServiceConstants.INVLD_REQUEST, excp);
-				return ServiceConstants.INVLD_REQUEST;
+				log.info(ServiceConstants.INVLD_REQUEST.getConstVal(), excp);
+				return ServiceConstants.INVLD_REQUEST.getConstVal();
 			} else if (excp instanceof InvalidParameterException) {
-				log.info(ServiceConstants.INVLD_REQUEST_PARAMS, excp);
-				return ServiceConstants.INVLD_REQUEST_PARAMS;
+				log.info(ServiceConstants.INVLD_REQUEST_PARAMS.getConstVal(), excp);
+				return ServiceConstants.INVLD_REQUEST_PARAMS.getConstVal();
 			} else if (excp instanceof AWSSecretsManagerException) {
-				log.info(ServiceConstants.UNBL_TO_ACCESS_KEY_DTLS, excp);
-				return ServiceConstants.UNBL_TO_ACCESS_KEY_DTLS;
+				log.info(ServiceConstants.UNBL_TO_ACCESS_KEY_DTLS.getConstVal(), excp);
+				return ServiceConstants.UNBL_TO_ACCESS_KEY_DTLS.getConstVal();
 			} else {
-				log.info(ServiceConstants.TECH_ERR, excp);
-				return ServiceConstants.TECH_ERR;
+				log.info(ServiceConstants.TECH_ERR.getConstVal(), excp);
+				return ServiceConstants.TECH_ERR.getConstVal();
 			}
 		}
 	}
