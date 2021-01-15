@@ -46,6 +46,7 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 		String secretId = request.get(ServiceConstants.SECRET_ID.getConstVal());
 		String region = request.get(ServiceConstants.REGION.getConstVal());
 		String endpointHost = request.get(ServiceConstants.SECRET_MGR_HOST.getConstVal());
+		GetSecretValueResult getSecretValueResult;
 
 		if (StringUtils.isNullOrEmpty(secretId) || StringUtils.isNullOrEmpty(region)
 				|| StringUtils.isNullOrEmpty(endpointHost)) {
@@ -54,8 +55,6 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 
 		try {
 			log.info("Retrieving the secret details for secret-id {} from region {}", secretId, region);
-
-			GetSecretValueResult getSecretValueResult = null;
 
 			// Create end-point configuration
 			AwsClientBuilder.EndpointConfiguration endpointConfig = new AwsClientBuilder.EndpointConfiguration(
@@ -95,6 +94,11 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 				log.info(ServiceConstants.TECH_ERR.getConstVal(), excp);
 				return ServiceConstants.TECH_ERR.getConstVal();
 			}
+		} finally {
+			secretId = null;
+			region = null;
+			endpointHost = null;
+			getSecretValueResult = null;
 		}
 	}
 
