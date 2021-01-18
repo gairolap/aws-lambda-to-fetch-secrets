@@ -1,5 +1,5 @@
 /**
- * AWS Handler class for fetching secrets from AWS secrets manager.
+ * Handler class for fetching secrets from AWS secrets manager.
  */
 package com.jpmorgan.aws.amfinance.handler;
 
@@ -19,13 +19,10 @@ import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.amazonaws.util.StringUtils;
 import com.jpmorgan.aws.amfinance.util.ServiceConstants;
 
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@FieldDefaults(level = AccessLevel.PRIVATE)
-public class SecretsHandler implements RequestHandler<Map<String, String>, Object> {
+public class AWSSecretsHandler implements RequestHandler<Map<String, String>, Object> {
 
 	/**
 	 * Method intercepts and processes the incoming requests.
@@ -36,7 +33,7 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 	 */
 	public Object handleRequest(Map<String, String> request, Context context) {
 
-		return this.fetchSecretsFromSecertsMngr(request);
+		return this.fetchSecretDetails(request);
 	}
 
 	/**
@@ -45,7 +42,7 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 	 * @param {@linkplain Map<String, String>}.
 	 * @return {@linkplain Object}.
 	 */
-	private Object fetchSecretsFromSecertsMngr(Map<String, String> request) {
+	private Object fetchSecretDetails(Map<String, String> request) {
 
 		String secretId = request.get(ServiceConstants.SECRET_ID.getConstVal());
 		String region = request.get(ServiceConstants.REGION.getConstVal());
@@ -60,18 +57,17 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 		try {
 			log.info("Retrieving the secret details for secret-id {} from region {}", secretId, region);
 
-			// Create end-point configuration
+			// Create the end-point configuration.
 			AwsClientBuilder.EndpointConfiguration endpointConfig = new AwsClientBuilder.EndpointConfiguration(
 					endpointHost, region);
-			// Create client-builder
+			// Create the client-builder.
 			AWSSecretsManagerClientBuilder clientBuilder = AWSSecretsManagerClientBuilder.standard();
-			// Set end-point configuration to client-builder
+			// Set the end-point configuration to the client-builder.
 			clientBuilder.setEndpointConfiguration(endpointConfig);
-			// Create secrets manager client
+			// Create secrets manager client.
 			AWSSecretsManager secretsMgrClient = clientBuilder.build();
-
 			GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest().withSecretId(secretId);
-			// Fetch the secret value
+			// Fetch the secret value.
 			getSecretValueResult = secretsMgrClient.getSecretValue(getSecretValueRequest);
 
 			if (getSecretValueResult == null) {
@@ -99,6 +95,7 @@ public class SecretsHandler implements RequestHandler<Map<String, String>, Objec
 				return ServiceConstants.TECH_ERR.getConstVal();
 			}
 		} finally {
+			// Nullify the class instance variables/objects.
 			secretId = null;
 			region = null;
 			endpointHost = null;
